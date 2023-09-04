@@ -31,7 +31,7 @@ RPC找到对应NetworkObjectId的对应NtworkBehaviour ID对象，执行RPC方�
 
 电脑1的P1和P2：
 
-<img src="D:\我的配置\游戏\Game\Assets\Netcode\image-20230610230221936.png" alt="image-20230610230221936" style="zoom:90%;" /> <img src="D:\我的配置\笔记图片\Unity\image-20230610230255315.png" alt="image-20230610230255315" style="zoom:90%;" /> 
+<img src="Assets\Netcode\image-20230610230221936.png" alt="image-20230610230221936" style="zoom:90%;" /> <img src="D:\我的配置\笔记图片\Unity\image-20230610230255315.png" alt="image-20230610230255315" style="zoom:90%;" /> 
 
 电脑2的P1和P2：
 
