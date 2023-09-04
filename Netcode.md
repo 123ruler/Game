@@ -33,11 +33,11 @@ RPC找到对应NetworkObjectId的对应NtworkBehaviour ID对象，执行RPC方�
 
 电脑1的P1和P2：
 
-<img src="Assets\Netcode\image-20230610230221936.png" alt="image-20230610230221936" style="zoom:90%;" /> <img src="D:\我的配置\笔记图片\Unity\image-20230610230255315.png" alt="image-20230610230255315" style="zoom:90%;" /> 
+<img src="./Assets/Netcode/image-20230610230221936.png" alt="image-20230610230221936" style="zoom:90%;" /> <img src="./Assets/Netcode/image-20230610230255315.png" alt="image-20230610230255315" style="zoom:90%;" /> 
 
 电脑2的P1和P2：
 
-<img src="D:\我的配置\笔记图片\Unity\image-20230610230347322.png" alt="image-20230610230347322" style="zoom:90%;" /> <img src="D:\我的配置\游戏\Game\Assets\Netcode\image-20230610230414329.png" alt="image-20230610230414329" style="zoom:90%;" /> 
+<img src="./Assets/Netcode/image-20230610230347322.png" alt="image-20230610230347322" style="zoom:90%;" /> <img src="./Assets/Netcode/image-20230610230414329.png" alt="image-20230610230414329" style="zoom:90%;" /> 
 
 
 
@@ -83,7 +83,7 @@ RPC找到对应NetworkObjectId的对应NtworkBehaviour ID对象，执行RPC方�
 
 Server端控制移动，游戏中对象才会移动，Client端无法使其对象移动
 
-![image-20230529220846012](D:\我的配置\游戏\Game\Assets\Netcode\image-20230529220846012.png) 
+![image-20230529220846012](./Assets/Netcode/image-20230529220846012.png) 
 
 ### ClientNetworkTransform
 
@@ -114,7 +114,7 @@ namespace Unity.Multiplayer.Samples.Utilities.ClientAuthority
 
 默认为服务器权威
 
-![image-20230530142937692](D:\我的配置\游戏\Game\Assets\Netcode\image-20230530142937692.png) 
+![image-20230530142937692](./Assets/Netcode/image-20230530142937692.png) 
 
 改成所有者权威：
 
