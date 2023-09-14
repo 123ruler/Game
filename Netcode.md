@@ -146,90 +146,185 @@ NetworkObject
 
 
 
-ClientRpc
+### RPC
 
-在**服务端调用**ClientRpc方法（非客户端调用会报错），所有**客户端执行**该方法
+**RPC发给同一个NetworkObject在不同机上的克隆实例**，对于同一个NetworkObject的克隆实例，ClientRPC是Server端发给Client端，ServerRPC是Client端发给Server端
 
-生成菜单的行为希望在服务端执行（保证数据精确同步），然后客户端获取服务端生成的数据
-
-（注意该方法，当host先进入，这个菜单就会开始生成，如果生成了一些菜单后，其他客户端才加入，只能获取到加入后的菜单，获取不到加入前的菜单，所以要设计成所有客户端准备就绪才能开始游戏）
+#### ClientRPC
 
 ```csharp
-private void Update() {
-    // 由服务端控制菜单生成
-    if (!IsServer) return;
-
-    spawnRecipeTimer -= Time.deltaTime;
-    if (spawnRecipeTimer <= 0f) {
-        spawnRecipeTimer = spawnRecipeTimerMax;
-
-        if (KitchenGameManager.Instance.IsGamePlaying() && waitingRecipeSOList.Count < waitingRecipesMax) {
-            // 服务端生成新菜单
-            int waitingRecipeSOIndex = UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count);
-
-            // 服务端调用，客户端执行
-            SpawnNewWaitingRecipeClientRPC(waitingRecipeSOIndex);
-        }
-    }
-}
-
-[ClientRpc]
-private void SpawnNewWaitingRecipeClientRPC(int waitingRecipeSOIndex)
-{
-    // 所有客户端执行此处代码
-    // 客户端获取到服务端生成的waitingRecipeSOIndex，进行显示菜单等操作
-    // （每个客户端都有个waitingRecipeSOList，这一步将waitingRecipeSO加到所有客户端的list中，所有客户端保持同步，这个像是一种”手动同步“，而不是依靠一些networkTransform那种组件帮助同步所有客户端的变换）
-    RecipeSO waitingRecipeSO = recipeListSO.recipeSOList[waitingRecipeSOIndex];
-    waitingRecipeSOList.Add(waitingRecipeSO);
-
-    OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
-}
-```
-
-
-
-经过server转发到client
-
-ClientRpc和ServerRPC会在**本机器本对象**执行，和在**其他机器的本对象**执行（如P1在机器1射击，会在机器1的P1对象上执行，和在其他机器上的P1对象上执行），ClientRpc是以调用对象为“作用域”的
-
-这样可以在ServerRPC中检测子弹是否合法（服务端校验），可防外挂，缺点是可能客户端没能立刻看到子弹生成（因为还要经过server转发）
-
-ClientRpc和ServerRPC会根据NetworkObject的IsServer属性，判断当前游戏对象是为服务端对象还是客户端对象，决定能否执行ClientRpc和ServerRPC
-
-以下挂载在Player上，机器1、2有P1、P2两个对象，现在在机器1上P1射击
-
-- 机器1上只有P1调用ServerRpc，P1也是Server所以在机器1的P1上执行ServerRPC，所以在机器1的P1上调用和执行ClientRPC（机器1只输出1个客户端收到）
-- 机器2上只有P1执行ServerRPC（P1对象是服务端对象），所以在机器2的P1上调用和执行ClientRPC（机器1只输出1个客户端收到）
-
-```csharp
-public class PTest : NetworkBehaviour
+public class RPCTest : NetworkBehaviour
 {
     private void Update()
     {
-        // owner射击
-        if (!IsOwner) return;
 
-        // 射击
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKeyDown(KeyCode.A))
         {
-            // 告诉服务端生成子弹
-            Debug.Log("客户端发送：" + Time.time);
-            ShootServerRPC(Time.time);
+            Debug.Log($"服务端发送 id:{NetworkObjectId}");
+            PongClientRPC("hello");
         }
     }
-
-    [ServerRpc]
-    private void ShootServerRPC(float value)
+    
+    [ClientRpc]
+    private void PongClientRPC(string text)
     {
-        // 告诉客户端生成子弹
-        ShootClientRPC(value);
+        Debug.Log($"客户端收到 id:{NetworkObjectId} text:{text}");
     }
 
-    [ClientRpc]
-    private void ShootClientRPC(float value)
+}
+```
+
+**Host玩家n**发给**Host端和Client端玩家n**
+
+<img src="./Assets/Netcode/image-20230913112848574.png" alt="image-20230913112848574" style="zoom: 50%;" /> <img src="./Assets/Netcode/image-20230913112903473.png" alt="image-20230913112903473" style="zoom:50%;" /> 
+
+Client端发送不了ClientRPC
+
+<img src="./Assets/Netcode/image-20230913112940396.png" alt="image-20230913112940396" style="zoom:50%;" /> <img src="./Assets/Netcode/image-20230913112945792.png" alt="image-20230913112945792" style="zoom:50%;" /> 
+
+
+
+#### ServerRPC
+
+```csharp
+public class RPCTest : NetworkBehaviour
+{
+    private void Update()
     {
-        Debug.Log("客户端收到：" + value);
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            Debug.Log($"客户端发送 objId:{NetworkObjectId}");
+            MyGlobalServerRpc();
+        }
+    }
+    
+    [ServerRpc(RequireOwnership = false)]
+    public void MyGlobalServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        var clientId = serverRpcParams.Receive.SenderClientId;
+        Debug.Log($"服务端收到 objId:{NetworkObjectId} 发送方clientId:{clientId}");
+        if (NetworkManager.ConnectedClients.ContainsKey(clientId))
+        {
+            var client = NetworkManager.ConnectedClients[clientId];
+        }
     }
 }
 ```
+
+**Host端玩家n**发给**Host端玩家n**
+
+<img src="./Assets/Netcode/image-20230914092437654.png" alt="image-20230914092437654" style="zoom:50%;" /> 
+
+**Client端玩家n**发给**Host端玩家n**
+
+<img src="./Assets/Netcode/image-20230914093232041.png" alt="image-20230914093232041" style="zoom:50%;" /> <img src="./Assets/Netcode/image-20230914093239678.png" alt="image-20230914093239678" style="zoom:50%;" /> 
+
+
+
+ **需要拥有者所有权 [ServerRpc(RequireOwnership = true)]**
+
+只有**当前端的所有者**能够发送信息（**Host端玩家1**、**Client端玩家2**可以发送）
+
+Host端玩家1发送给Host端玩家1
+
+<img src="./Assets/Netcode/image-20230914093500277.png" alt="image-20230914093500277" style="zoom:50%;" /> 
+
+Client端玩家2发送给Host端玩家2
+
+<img src="./Assets/Netcode/image-20230914093842435.png" alt="image-20230914093842435" style="zoom:50%;" /> <img src="./Assets/Netcode/image-20230914093849089.png" alt="image-20230914093849089" style="zoom:50%;" /> 
+
+
+
+### NetworkVariable
+
+**自动同步到同一个NetworkObject在不同机上的克隆实例**，不需要像RPC那样要通过发信息然后手动更新值，玩家1在端1修改值，在端2的玩家1的值立刻同步
+
+```csharp
+public class NetworkVariableTest : NetworkBehaviour
+{
+    private NetworkVariable<int> Value = new NetworkVariable<int>(0);
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        if (!IsServer)
+        {
+            Value.OnValueChanged += OnClientValueChanged;
+        }
+    }
+
+    private void Update()
+    {
+        if (IsServer)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                Value.Value += 1;
+                Debug.Log($"服务端 objId:{NetworkObjectId} Value:{Value.Value}");
+            }
+        }
+    }
+
+    private void OnClientValueChanged(int pre, int cur)
+    {
+        Debug.Log($"客户端Value改变 objId:{NetworkObjectId} pre:{pre} cur:{cur}");
+    }
+}
+```
+
+host端玩家n修改值，client端玩家n同步值
+
+<img src="./Assets/Netcode/image-20230914112657252.png" alt="image-20230914112657252" style="zoom:50%;" />  <img src="./Assets/Netcode/image-20230914112418826.png" alt="image-20230914112418826" style="zoom:50%;" /> 
+
+
+
+反过来，Client端修改值，Host端同步，要指定NetworkVariableWritePermission.Owner和IsOwner，因为默认是NetworkVariableWritePermission.Server（Server端有写权限），改成Owner才能让Client端的Owner有写权限（Client端非Owener无法设置写权限）
+
+```csharp
+public class NetworkVariableTest : NetworkBehaviour
+{
+    private NetworkVariable<int> Value = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        if (IsServer)
+        {
+            Value.OnValueChanged += OnServerValueChanged;
+        }
+    }
+
+    private void Update()
+    {
+        if (!IsServer && IsOwner)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                Value.Value += 1;
+                Debug.Log($"客户端 objId:{NetworkObjectId} Value:{Value.Value}");
+            }
+        }
+    }
+
+    private void OnServerValueChanged(int pre, int cur)
+    {
+        Debug.Log($"服务端Value改变 objId:{NetworkObjectId} pre:{pre} cur:{cur}");
+    }
+}
+```
+
+只有Client端的玩家2能够修改值，Host端玩家2同步值
+
+<img src="./Assets/Netcode/image-20230914134801692.png" alt="image-20230914134801692" style="zoom:50%;" /> <img src="./Assets/Netcode/image-20230914134829274.png" alt="image-20230914134829274" style="zoom:50%;" /> 
+
+如果没设置NetworkVariableWritePermission.Owner，Client端两玩家修改会报错
+
+<img src="./Assets/Netcode/image-20230914114740271.png" alt="image-20230914114740271" style="zoom:50%;" /> 
+
+设置了NetworkVariableWritePermission.Owner，但没限制IsOwner，Client端玩家1修改会报错
+
+<img src="./Assets/Netcode/image-20230914114507665.png" alt="image-20230914114507665" style="zoom:50%;" /> <img src="./Assets/Netcode/image-20230914114537590.png" alt="image-20230914114537590" style="zoom:50%;" /> 
 
