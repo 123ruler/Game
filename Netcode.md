@@ -4,7 +4,7 @@
 - 客户端权威是指游戏的逻辑和状态都由客户端来控制和同步，服务端只负责转发客户端的数据或提供一些辅助功能。这种模式的优点是可以减少服务端的压力和成本，以及网络延迟和丢包的影响，适用于对网络延迟、运维成本和复杂性要求较低的游戏，比如合作类、休闲类、冒险类等。缺点是会降低游戏的数据一致性和安全性，容易出现客户端作弊或篡改数据的情况。
 
 
-### NetworkObject
+## NetworkObject
 
 NetworkObjectId：两个客户端各自生成1个玩家，两个端都是玩家一id=1，玩家二id=2
 
@@ -22,7 +22,7 @@ RPC找到对应NetworkObjectId的对应NtworkBehaviour ID对象，执行RPC方�
 
 
 
-### NetworkBehaviour
+## NetworkBehaviour
 
 继承这个类，可以使用各种关于网络的属性和方法
 
@@ -70,9 +70,23 @@ RPC找到对应NetworkObjectId的对应NtworkBehaviour ID对象，执行RPC方�
 
 - NetworkObject.Despawn() ：从所有客户端中销毁当前游戏对象，但在服务器中该对象还存在在内存中（但从场景中移除，要彻底删除传入参数true）
 
+  
+
+## NetworkManager
+
+事件
+
+## UTP
+
+1. **ConnectTimeoutMS**：Client端每隔一段时间尝试连接一次
+2. **MaxConnectAttempts**：Client端尝试连接的最大次数
+3. **DisconnectTimeoutMS**：超时时间内没有从对方接收到任何信息，就会认为这个连接已经断开了
 
 
-### NetworkTransform
+
+
+
+## NetworkTransform
 
 让两端同步某个游戏对象的Transform，这样两边运动对方才能看到
 
@@ -105,7 +119,7 @@ namespace Unity.Multiplayer.Samples.Utilities.ClientAuthority
 
 
 
-### NetworkAnimator
+## NetworkAnimator
 
 将当前网络对象的动画同步到其他端，加上这个玩家能看到其他玩家的动画
 
@@ -146,11 +160,11 @@ NetworkObject
 
 
 
-### RPC
+## RPC
 
 **RPC发给同一个NetworkObject在不同机上的克隆实例**，对于同一个NetworkObject的克隆实例，ClientRPC是Server端发给Client端，ServerRPC是Client端发给Server端
 
-#### ClientRPC
+### ClientRPC
 
 ```csharp
 public class RPCTest : NetworkBehaviour
@@ -184,7 +198,7 @@ Client端发送不了ClientRPC
 
 
 
-#### ServerRPC
+### ServerRPC
 
 ```csharp
 public class RPCTest : NetworkBehaviour
@@ -236,7 +250,7 @@ Client端玩家2发送给Host端玩家2
 
 
 
-### NetworkVariable
+## NetworkVariable
 
 **自动同步到同一个NetworkObject在不同机上的克隆实例**，不需要像RPC那样要通过发信息然后手动更新值，玩家1在端1修改值，在端2的玩家1的值立刻同步
 
