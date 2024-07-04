@@ -158,3 +158,235 @@ transform.rotation = Quaternion.LookRotation(dir)
 
 look只会旋转本地xy轴，z轴不会旋转
 
+
+
+# 矩阵
+
+## 齐次坐标
+
+点：
+$$
+\left[
+\matrix{
+  x\\
+  y\\
+  z\\
+  1
+}
+\right]
+$$
+方向矢量：
+$$
+\left[
+\matrix{
+  x\\
+  y\\
+  z\\
+  0
+}
+\right]
+$$
+
+
+## 变换
+
+### 平移矩阵
+
+$$
+M_{translation}=\left[
+\matrix{
+  1 & 0 & 0 & t_x\\
+  0 & 1 & 0 & t_y\\
+  0 & 0 & 1 & t_z\\
+  0 & 0 & 0 & 1
+}
+\right]
+$$
+
+### 缩放矩阵
+
+$$
+M_{scale}=\left[
+\matrix{
+  k_x & 0 & 0 & 0\\
+  0 & k_y & 0 & 0\\
+  0 & 0 & k_z & 0\\
+  0 & 0 & 0 & 1
+}
+\right]
+$$
+
+### 旋转矩阵
+
+$$
+R_x(\Theta)=\left[
+\matrix{
+  1 & 0 & 0 & 0\\
+  0 & cos\Theta & -sin\Theta & 0\\
+  0 & sin\Theta & cos\Theta & 0\\
+  0 & 0 & 0 & 1
+}
+\right]
+$$
+
+$$
+R_y(\Theta)=\left[
+\matrix{
+  cos\Theta & 0 & sin\Theta & 0\\
+  0 & 1 & 0 & 0\\
+  -sin\Theta & 1 & cos\Theta & 0\\
+  0 & 0 & 0 & 1
+}
+\right]
+$$
+
+$$
+R_z(\Theta)=\left[
+\matrix{
+  cos\Theta & -sin\Theta & 0 & 0\\
+  sin\Theta & cos\Theta & 0 & 0\\
+  0 & 0 & 1 & 0\\
+  0 & 0 & 0 & 1
+}
+\right]
+$$
+
+### 复合变换
+
+$$
+P_{new}=M_{translation}M_{rotation}M_{scale}P_{old}
+$$
+
+### 
+
+## 旋转矩阵2个用途
+
+旋转矩阵用途：旋转向量、坐标变换
+
+### 向量旋转
+
+![v2-b6cc20098234793618dd553bb7e3621e_1440w](./Assets/Utils/v2-b6cc20098234793618dd553bb7e3621e_1440w.webp)
+
+P'点旋转α，得到P点，旋转矩阵是R，则：
+
+P=R*P'
+
+### 坐标变换
+
+![v2-aa06a0cd65ed3438c4a81417b56c0c0e_1440w](./Assets/Utils/v2-aa06a0cd65ed3438c4a81417b56c0c0e_1440w.webp)
+
+坐标系O-xyz到坐标系O-x'y'z'的旋转矩阵是R，在新坐标系下P点坐标变为P'，则：
+
+P=R*P'
+
+## 旋转顺序
+
+旋转(θx, θy, θz)时，需注意旋转顺序
+
+Unity中指定旋转(θx, θy, θz)时旋转顺序是zxy，组合变换矩阵是Mz·Mx·My，是按旋转三个角度前的最初坐标轴旋转的（绕最初z轴，最初x轴，最初y轴依次旋转）
+
+而组合变换矩阵Mz·Mx·My，同时是绕最初坐标系y轴旋转θy，再绕旋转θy后的新坐标系x轴旋转θx，再绕旋转θx后的新坐标系z轴旋转θz
+
+即 绕最开始轴 和 绕变换后的轴 的组合旋转矩阵是相反的
+
+## 投影矩阵
+
+观察空间->裁剪空间
+$$
+P_{clip}=\left[
+\matrix{
+  \frac{cot{\frac{FOV}{2}}}{Aspect} & 0 & 0 & 0\\
+  0 & cot{\frac{FOV}{2}} & 0 & 0\\
+  0 & 0 & \frac{Far+Near}{Far-Near} & -\frac{2\cdot{Near}\cdot{Far}}{Far-Near}\\
+  0 & 0 & -1 & 0
+}
+\right]\left[
+\matrix{
+  x\\
+  y\\
+  z\\
+  1
+}
+\right]
+$$
+投影矩阵将w变为-z，不满足 -w <= x y z <= w 的都要被剔除
+
+已知：
+$$
+Aspect=\frac{W_{Near}}{H_{Near}}=\frac{W_{Far}}{H_{Far}}
+$$
+
+$$
+H=2*W*tan{\frac{FOV}{2}}
+$$
+
+推导：
+
+**1. X方向**
+
+近平面观察空间中（举例）：
+$$
+-\frac{W_N}{2}\leq{x}\leq\frac{W_N}{2}
+$$
+
+$$
+-\frac{Aspect\cdot{H_N}}{2}\leq{x}\leq\frac{Aspect\cdot{H_N}}{2}
+$$
+
+要缩放到：
+$$
+-Near\leq{x}\leq{Near}
+$$
+缩放倍数为：
+
+$$
+S_x=\frac{Near}{\frac{Aspect\cdot{H_N}}{2}}=\frac{Near}{Aspect\cdot{Near}\cdot{tan{\frac{FOV}{2}}}}=\frac{cot{\frac{FOV}{2}}}{Aspect}
+$$
+**2. Y方向**
+
+近平面观察空间中（举例）：
+$$
+-\frac{H_N}{2}\leq{y}\leq\frac{H_N}{2}
+$$
+
+要缩放到：
+$$
+-Near\leq{y}\leq{Near}
+$$
+缩放倍数为：
+
+$$
+S_y=\frac{Near}{\frac{H_N}{2}}=\frac{Near}{Near\cdot{tan{\frac{FOV}{2}}}}=cot{\frac{FOV}{2}}
+$$
+**3. Z方向**
+
+视椎内：
+$$
+-Near\leq{z}\leq{-Far}
+$$
+要变换到：
+$$
+-Near\leq{z}\leq{Far}
+$$
+这是缩放+平移，变换矩阵要求先缩放后平移
+
+缩放：
+$$
+区间范围:Near-Far \rightarrow Far+Near
+$$
+
+$$
+S_z=\frac{Far+Near}{Near-Far}
+$$
+
+在缩放后的平移：
+$$
+-Near\cdot S_z (缩放后的近点坐标) \rightarrow -Near(最终近点坐标)
+$$
+
+$$
+T_Z=-Near+Near\cdot S_z=Near\cdot(S_z-1)=-\frac{2\cdot Near \cdot Far}{Far-Near}
+$$
+
+![image-20240703181640114](./Assets/Utils/image-20240703181640114.png)
+
