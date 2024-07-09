@@ -472,3 +472,14 @@ screen_y=(\frac{clip_y}{clip_w \cdot 2} + \frac{1}{2}) \cdot pixelHeight
 $$
 
 z分量会用于深度缓存，有的驱动会存clipz/clipw，但不是必须的
+
+## MVP
+
+模型到屏幕空间转换：
+
+模型空间–>世界空间–>观察空间–>剪裁空间–>屏幕空间
+
+通常MVP转换在顶点着色器进行，而裁剪空间->屏幕空间的转换由Unity内部进行，在片元着色器中可得到片元在屏幕空间的位置
+
+<img src="./Assets/Utils/image-20240709183552878.png" alt="image-20240709183552878" style="zoom: 50%;" />
+
