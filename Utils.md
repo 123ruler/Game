@@ -289,9 +289,12 @@ Unity中指定旋转(θx, θy, θz)时旋转顺序是zxy，组合变换矩阵是
 
 即 绕最开始轴 和 绕变换后的轴 的组合旋转矩阵是相反的
 
-## 投影矩阵
+## 裁剪空间
 
-观察空间->裁剪空间
+裁剪矩阵：观察空间->裁剪空间
+
+### 透视投影
+
 $$
 P_{clip}=\left[
 \matrix{
@@ -309,7 +312,7 @@ P_{clip}=\left[
 }
 \right]
 $$
-投影矩阵将w变为-z，不满足 -w <= x y z <= w 的都要被剔除
+透视投影矩阵将w变为-z，不满足 -w <= x y z <= w 的都要被剔除
 
 已知：
 $$
@@ -388,5 +391,67 @@ $$
 T_Z=-Near+Near\cdot S_z=Near\cdot(S_z-1)=-\frac{2\cdot Near \cdot Far}{Far-Near}
 $$
 
+<img src="./Assets/Utils/image-20240708174948404.png" alt="image-20240708174948404" style="zoom: 50%;" />
+
 ![image-20240703181640114](./Assets/Utils/image-20240703181640114.png)
 
+### 正交投影
+
+$$
+P_{clip}=\left[
+\matrix{
+  \frac{1}{Aspect \cdot Size} & 0 & 0 & 0\\
+  0 & \frac{1}{Size} & 0 & 0\\
+  0 & 0 & -\frac{1}{Far-Near} & -\frac{Far+Near}{Far-Near}\\
+  0 & 0 & 0 & 1
+}
+\right]\left[
+\matrix{
+  x\\
+  y\\
+  z\\
+  1
+}
+\right]
+$$
+
+透视投影矩阵将w变为1，不满足 -w <= x y z <= w 的都要被剔除
+
+已知：
+$$
+Aspect=\frac{W}{2 \cdot Size}
+$$
+
+推导：
+
+XY方向都是求缩放倍数，Z方向是先缩放后平移，推导过程与透视投影相似
+
+<img src="./Assets/Utils/image-20240708175427138.png" alt="image-20240708175427138" style="zoom:50%;" />
+
+![image-20240708175457107](./Assets/Utils/image-20240708175457107.png)
+
+## 屏幕空间
+
+### 齐次除法（透视除法）
+
+用w分量除xyz分量，得到NDC（归一化的设备坐标），xyz的范围是[-1, 1]
+
+透视：裁剪空间中 -w <= x y z <= w，除以w后 -1 <= x y z <= 1
+
+![image-20240709102315701](./Assets/Utils/image-20240709102315701.png)
+
+正交：已经是 -1 <= x y z <= 1
+
+![image-20240709102342276](./Assets/Utils/image-20240709102342276.png)
+
+### 齐次除法+屏幕映射
+
+$$
+screen_x=(\frac{clip_x}{clip_w \cdot 2} + \frac{1}{2}) \cdot pixelWidth
+$$
+
+$$
+screen_y=(\frac{clip_y}{clip_w \cdot 2} + \frac{1}{2}) \cdot pixelHeight
+$$
+
+z分量会用于深度缓存，有的驱动会存clipz/clipw，但不是必须的
