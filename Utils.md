@@ -483,3 +483,88 @@ z分量会用于深度缓存，有的驱动会存clipz/clipw，但不是必须�
 
 <img src="./Assets/Utils/image-20240709183552878.png" alt="image-20240709183552878" style="zoom: 50%;" />
 
+# Shader
+
+混合模式
+
+**AB（Alpha Blend）**
+
+_Src=SrcAlpha _Dst=OneMinusSrcAlpha _AlphaAdd=0
+
+rgb值无需乘透明度，即保持原本颜色，但应用透明度
+
+**AD（Alpha Additive）**
+
+_Src=One _Dst=One _AlphaAdd=1
+
+rgb值需乘透明度，即在原本颜色基础上，透明度越高的地方越亮
+
+（不知为何rgb值不乘透明度时，半透明效果消失）
+
+<img src="C:\Users\ruler\AppData\Roaming\Typora\typora-user-images\image-20240721154016630.png" alt="image-20240721154016630" style="zoom: 67%;" /><img src="C:\Users\ruler\AppData\Roaming\Typora\typora-user-images\image-20240721154038073.png" alt="image-20240721154038073" style="zoom: 67%;" />
+
+以上分别为AB AD
+
+```
+Properties
+{
+    [Enum(UnityEngine.Rendering.BlendMode)]
+    _Src("Src", int) = 0
+    [Enum(UnityEngine.Rendering.BlendMode)]
+    _Dst("Dst", int) = 0
+    [Toggle]_AlphaAdd("AlphaAdd", int) = 0
+    _MainTex ("Texture", 2D) = "white" {}
+}
+SubShader
+{
+    Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }
+    Blend [_Src] [_Dst]
+    ZWrite Off
+    LOD 100
+
+    Pass
+    {
+        CGPROGRAM
+        #pragma vertex vert
+        #pragma fragment frag
+
+        #include "UnityCG.cginc"
+
+        struct appdata
+        {
+            float4 vertex : POSITION;
+            float2 uv : TEXCOORD0;
+        };
+
+        struct v2f
+        {
+            float2 uv : TEXCOORD0;
+            float4 vertex : SV_POSITION;
+        };
+
+        sampler2D _MainTex;
+        float4 _MainTex_ST;
+        uniform int _Scr;
+        uniform int _Dst;
+        uniform float _AlphaAdd;
+
+        v2f vert (appdata v)
+        {
+            v2f o;
+            o.vertex = UnityObjectToClipPos(v.vertex);
+            o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+            return o;
+        }
+
+        fixed4 frag (v2f i) : SV_Target
+        {
+            fixed4 texCol = tex2D(_MainTex, i.uv);
+            fixed3 col = (_AlphaAdd == 0 ? texCol.rgb : texCol.rgb * texCol.a);
+            fixed alpha = texCol.a;
+            return fixed4(col.rgb, alpha);
+        }
+        ENDCG
+    }
+}
+```
+
