@@ -485,7 +485,23 @@ z分量会用于深度缓存，有的驱动会存clipz/clipw，但不是必须�
 
 # Shader
 
-混合模式
+## 混合模式
+
+最终颜色（rgba） = （着色器输出颜色 * 源系数）+（缓冲区颜色 * 目标系数）
+
+Blend SrcFactor DstFactor ：SrcFactor是源系数，DstFactor是目标系数，源是着色器输出颜色，目标是颜色缓冲颜色
+
+各种实例：https://aver58.github.io/2019/07/20/ShaderLab_Blending/
+
+Blend zero one：仅显示背景的RGB部分，无Alpha透明通道处理。
+
+Blend one  zero：  仅显示贴图的RGB部分，无Alpha透明通道处理。 A通道为0即本应该透明的地方也渲染出来了。
+
+Blend one  one：贴图和背景叠加，无Alpha透明通道处理。仅仅是颜色rgb数值的叠加更趋近于白色即（1，1，1）了。
+
+Blend SrcAlpha  zero：仅仅显示贴图，贴图含Alpha透明通道处理。但是贴图中的透明部分，即下图黑色部分没有颜色来显示，因为源颜色乘以alpha值0，为0；而混合目标的颜色乘以zero 0，也是0。所以透明部分显示的颜色为（0，0，0）
+
+（虽然颜色缓冲中也有a，但我实际发现颜色缓冲的a对实际显示的rgb颜色有影响，但不是直接等于原rgb*a，平时使用时可认为a=1，因为总要渲染背景，天空盒等不透明物体，或者说平常对待透明物体只需关心rgb的计算，a值仅作为SrcAlpha这样的混合因子用于混合rgb）
 
 **AB（Alpha Blend）**
 
@@ -499,7 +515,7 @@ _Src=One _Dst=One _AlphaAdd=1
 
 rgb值需乘透明度，即在原本颜色基础上，透明度越高的地方越亮
 
-（不知为何rgb值不乘透明度时，半透明效果消失）
+（Blend One One模式下，当rbg值不乘透明度时，透明区域也变成白色，因为透明部分rgb=(1, 1, 1)，最终rgb=(1, 1, 1)*1+背景rgb\*1=(1, 1, 1)），所以显示白色）
 
 <img src="C:\Users\ruler\AppData\Roaming\Typora\typora-user-images\image-20240721154016630.png" alt="image-20240721154016630" style="zoom: 67%;" /><img src="C:\Users\ruler\AppData\Roaming\Typora\typora-user-images\image-20240721154038073.png" alt="image-20240721154038073" style="zoom: 67%;" />
 
