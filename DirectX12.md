@@ -34,7 +34,7 @@ md3dDevice->CreateConstantBufferView(&cbvDesc, handle);
 
 **2. 创建堆（ID3D12DescriptorHeap）：**
 
-CreateDescriptorHeap(&cbvHeapDesc 描述符堆的描述, IID_PPV_ARGS(&mCbvHeap) 描述符堆的GUID)
+md3dDevice->CreateDescriptorHeap(&cbvHeapDesc 描述符堆的描述, IID_PPV_ARGS(&mCbvHeap) 描述符堆的GUID)
 
 
 
@@ -275,3 +275,37 @@ void ShapesApp::DrawRenderItems(
 }
 ```
 
+
+
+## XMFLOAT4X4 和 XMMATRIX
+
+将矩阵传给Shader之前 要进行转置的原因：
+
+有一个矩阵（线代）
+$$
+\left[
+\matrix{
+  a & b & c & d\\
+  e & f & g & h\\
+  i & j & k & l\\
+  m & n & o & p
+}
+\right]
+$$
+行主，内存位置索引为：a b c d e f h i j k l m n o p
+
+列主，内存位置索引为：a e i m b f j n c g k o d h l p
+
+HLSL中使用右乘即V*M，按道理说行主矩阵应右乘，但HLSL又期望矩阵为列主（为了速度），所以HLSL中的矩阵乘法为：
+$$
+V*M = [V * M[1,2,3,4], …] (数字为内存位置索引)
+	= [V * M[a,e,i,m], …]
+$$
+DX是行主序存储矩阵的，但将矩阵看作列主来读取（1,2,3,4），所以在传给shader之前先将矩阵转置，那么HLSL中可以以读取列主矩阵的方式读取到行主矩阵，获得行主矩阵后，就应该进行右乘计算
+
+**总结：在平常shader计算时，可以将矩阵看成行主来右乘计算，但传给shader之前要将原先的行主矩阵进行转置**
+
+opengl	右手坐标系 列向量 左乘 列主序存储矩阵
+osg		 右手坐标系 行向量 右乘 行主序存储矩阵
+d3d		 左手坐标系 行向量 右乘 行主序存储矩阵
+ogre		右手坐标系 列向量 左乘 行主序存储矩阵
